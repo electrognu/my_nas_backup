@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import pyexiv2
+import datetime
+
 # f2org : path to the folder to organize.
 # falbum : root path where the photos will be translated.
 
@@ -13,3 +16,15 @@
 		# The folder Year month day exists ?
 			# Yes -> move it.
 			# No -> create it and move image into.
+
+# Need to manage exceptions reading files-------------------
+metadata = pyexiv2.ImageMetadata('test.jpg')
+metadata.read()
+datetag = metadata['Exif.Image.DateTime']
+t= datetag.value.strftime("%Y %m %d")
+print( "\n\n "+t)
+
+
+
+# INFORMATION LINKS
+# http://python3-exiv2.readthedocs.io/en/latest/tutorial.html#reading-and-writing-exif-tags
