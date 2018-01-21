@@ -7,67 +7,66 @@ from shlex import split
 from time import sleep
 
 # Path variables 
-mount_path = "/home/gabriel/.tmpsmb/"		# Path where the remote samba folder is mounted  
+# smb_p is the path where samba folder is mounted
+# base_p is the path of the base storage, a folder in the usb harddisk
+## f2bk is the forlder we are going to back up, this must be asked or pass like argument in script
+# difdir wil be the folder where diferential back up will be stored.
+# froot is the final folder where the backup will be placed and there will be a main folder that contain the actual backup, and the diferential folders 
+# mf just is the name of main folder where actualized backup is in
+# options are the options passed to rsync command that perform the backup
+smb_p = "/home/gabriel/.tmpsmb/" 
+base_p = "/media/gabriel/BackUp2/Backup_NAS18/"		
+f2bk = ""							
+difdir = datetime.datetime.now().strftime("%y%m%d")	
+froot = ""
+mf = "main"
+options = ""
 
 
-backup_path = "/media/gabriel/BackUp2/Backup_NAS_USB/"		# Root Path for backup the folder mounted 
-backup_dir = "test"							
-abort = False								# If abort == True then we will not continue
-
-
-incrementdir = datetime.datetime.now().strftime("%y%m%d-%H%M")	# canviar eh?
-archiveroot = backup_path + backup_dir
-currenti = "main"
-
-
-
-# Testing if mount_path directory exists, if not then create it...
-if os.path.exists(mount_path):
+# Testing if smb_p directory exists, if not then create it...
+if os.path.exists(smb_p):
 	print("Mount path exists")
 else:
-	command = "mkdir " + mount_path
+	command = "mkdir " + smb_p
 	a = subprocess.run(split(command))
 	if a.returncode != 0:
-		print("ERROR : creating mount path : " + mount_path)
+		print("ERROR : creating mount path : " + smb_p)
 		sys.exit(1)
 	else :
-		print("mount path created : " + mount_path)
-		
+		print("mount path created : " + smb_p)
 
-	
-# Testing if backup_path exists if not then abort, we can not store an file.
-if os.path.exists(backup_path+backup_dir):
+# Take the folder passed by the user, or ask for it
+if len(sys.argv) == 1:
+	f2bk = input("Introduce the folder to backup : ")
+else:
+	f2bk = sys.argv[1]
+
+# Setting variables froot and options	
+froot = base_p + f2bk
+options = "-ahv --del --progress --backup --backup-dir="+froot+"/"+difdir
+			
+# Testing if base_p exists if not then abort, we can not store any file.
+if os.path.exists(base_p+f2bk):
 	print("Backup path exists ...")
 else:
-	print("Backup directory do not exist")
+	print("Backup directory do not exist in "+base_p)
 	sys.exit(1)
+	
 
 
-
-# Experiment 1
-options = "-ahv --del --progress --backup --backup-dir="+archiveroot+"/"+incrementdir
-
-
-# mounting remote samba folder :
-command = "sudo mount.cifs //192.168.8.200/" + backup_dir + " " + mount_path + " -o user=gabriel"
+# Mounting remote samba folder and launch rsync in positive case.
+command = "sudo mount.cifs //192.168.8.200/" + f2bk + " " + smb_p + " -o user=gabriel"
 a = subprocess.run(split(command))
 if a.returncode != 0:
-	print("remote folder NOT mounted : " + backup_dir + " " + mount_path)
+	print("\nRemote folder NOT mounted : " + f2bk + " " + smb_p)
 	sys.exit(1)
 else:
 	print("\n\nRemote folder mounted ....")
-	command = "rsync " + options + " " + mount_path + " " + archiveroot + "/" +currenti
+	command = "rsync " + options + " " + smb_p + " " + froot + "/" +mf
 	a = subprocess.run(split(command))
 	if a.returncode == 0:
-		print( "\n\nRealizado con exito ")
-sleep(4)
+		print( "\n\nDone with success")
+		# desmuntar samba 
+		# borrar .tmpt
 
 
-	# Que passa si no se sap contrasenya de sudo ?
-	# Quins senyals en donarà el Process ... 
-	# comprovar que existeix la carpeta muntada ...
-	# Si no es munta be la carpeta abortar...
-	
-# Utilitzar "rsync per sincronitzar les carpetes"
-
-# Explorar rsync en mode copies incrementals ...
